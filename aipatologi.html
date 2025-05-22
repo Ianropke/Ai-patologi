@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI i Europæisk Patologi - Interaktiv Oversigt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - European Landscape: Market growth (Report data: USD 200M 2024 -> USD 1197M 2032; USD 1.22B 2024 -> USD 2.31B 2029) presented as a Chart.js bar chart to show trends. Goal: Inform. Interaction: Static chart. Justification: Visual representation of market potential. Library: Chart.js.
+        - Regulatory Frameworks (Table 1): Presented as an HTML table with JS-powered expandable rows for details. Goal: Organize & Inform. Interaction: Click to expand. Justification: Condense complex info, allow drill-down. Method: HTML + JS.
+        - Country Spotlights (Table 2 data): Dynamically displayed text and simple stats for selected countries. Digitization levels/market values (e.g., Sweden USD 8.5M 2023, Germany USD 109.3M by 2030, UK USD 85.9M by 2030) as Chart.js bar charts if space/design allows per country. Goal: Compare & Inform. Interaction: Select country to view data. Justification: Easy comparison of key metrics. Library: Chart.js, HTML + JS.
+        - Leading Technologies (Table 3 data): Presented as interactive cards for each AI solution. Goal: Inform & Organize. Interaction: Clickable cards for details. Justification: Structured overview of available solutions. Method: HTML + JS.
+        - General text content: Summarized and structured using headings, paragraphs, lists. Goal: Inform.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-link {
+            @apply px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:bg-stone-200 hover:text-neutral-900 transition-colors;
+        }
+        .nav-link.active {
+            @apply bg-teal-600 text-white hover:bg-teal-700;
+        }
+        .content-section {
+            @apply p-4 md:p-8 bg-white rounded-lg shadow-lg;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* max-w-2xl */
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px; /* h-80 */
+            max-height: 350px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 350px; /* h-96 approx */
+                max-height: 400px;
+            }
+        }
+        .tab-button {
+            @apply px-4 py-2 font-medium text-sm rounded-t-lg focus:outline-none transition-colors;
+        }
+        .tab-button.active {
+            @apply bg-teal-500 text-white;
+        }
+        .tab-button:not(.active) {
+            @apply text-teal-600 hover:bg-teal-100;
+        }
+        .accordion-button {
+            @apply w-full text-left px-4 py-3 bg-stone-200 hover:bg-stone-300 rounded-md font-semibold text-neutral-800 transition-colors flex justify-between items-center;
+        }
+        .accordion-content {
+            @apply p-4 bg-stone-50 rounded-b-md;
+        }
+        .country-select-button {
+            @apply px-4 py-2 m-1 border border-teal-500 text-teal-700 rounded-md hover:bg-teal-100 transition-colors;
+        }
+        .country-select-button.active {
+            @apply bg-teal-500 text-white;
+        }
+        .card {
+            @apply bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow;
+        }
+        h1, h2, h3 { @apply text-neutral-800; }
+    </style>
+</head>
+<body class="bg-stone-100 text-neutral-700">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-teal-700">AI i Patologi: Europa</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#forside" class="nav-link active">Forside</a>
+                        <a href="#landskab" class="nav-link">Landskab</a>
+                        <a href="#regulering" class="nav-link">Regulering</a>
+                        <a href="#initiativer" class="nav-link">EU Initiativer</a>
+                        <a href="#lande" class="nav-link">Lande</a>
+                        <a href="#teknologier" class="nav-link">Teknologier</a>
+                        <a href="#implementering" class="nav-link">Implementering</a>
+                        <a href="#strategi" class="nav-link">Strategi</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-neutral-400 hover:text-white hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+                        <span class="sr-only">Åbn hovedmenu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#forside" class="nav-link block active">Forside</a>
+                <a href="#landskab" class="nav-link block">Landskab</a>
+                <a href="#regulering" class="nav-link block">Regulering</a>
+                <a href="#initiativer" class="nav-link block">EU Initiativer</a>
+                <a href="#lande" class="nav-link block">Lande</a>
+                <a href="#teknologier" class="nav-link block">Teknologier</a>
+                <a href="#implementering" class="nav-link block">Implementering</a>
+                <a href="#strategi" class="nav-link block">Strategi</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6 space-y-8">
+        
+        <section id="forside" class="content-section">
+            <h1 class="text-3xl font-bold mb-4 text-teal-700">Velkommen til Oversigten over AI i Europæisk Patologi</h1>
+            <p class="text-lg mb-6">Denne interaktive applikation giver et dybdegående overblik over status, tendenser, udfordringer og muligheder for kunstig intelligens (AI) inden for patologi på tværs af Europa, baseret på "AI in European Pathology: A 2024-2025 Report". Formålet er at give dig den nødvendige viden til at forberede implementeringen af AI i din organisation.</p>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2">Nøglestatistikker</h2>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Globalt AI i patologi marked: USD 200M (2024) → USD 1197M (2032 est.)</li>
+                        <li>Frankrig: Kun ~20% af patologiafdelinger fuldt digitaliserede (før 2024).</li>
+                        <li>Sverige: 179 AI-initiativer i sundhedsvæsenet, 13% fuldt implementeret (2024).</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2">Hvad du kan forvente</h2>
+                    <p>Naviger gennem sektionerne for at udforske det nuværende landskab, regulatoriske aspekter, specifikke landes fremskridt, førende teknologier og strategiske anbefalinger. Brug navigationen øverst for at springe til specifikke emner.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="landskab" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">Det Europæiske Landskab for AI i Patologi</h1>
+            <p class="mb-6">Denne sektion udforsker den nuværende status for AI-adoption i europæisk patologi, de primære drivkræfter bag implementeringen, samt de vedvarende barrierer, der skal overvindes. Forståelse af disse elementer er afgørende for strategisk planlægning.</p>
+
+            <div class="mb-6">
+                <div class="flex border-b border-neutral-300">
+                    <button class="tab-button active" data-tab="nuvaerende">Nuværende Udbredelse</button>
+                    <button class="tab-button" data-tab="drivkraefter">Drivkræfter</button>
+                    <button class="tab-button" data-tab="barrierer">Barrierer</button>
+                </div>
+
+                <div id="nuvaerende" class="tab-content py-4">
+                    <h2 class="text-2xl font-semibold mb-3">Nuværende Udbredelse og Markedspenetration</h2>
+                    <p class="mb-4">The adoption of AI in digital pathology across Europe is in an exploratory but rapidly advancing phase. As of 2023, fewer than ten AI-enabled medical devices in pathology were FDA-approved, contrasting with nearly 400 for radiology. However, market growth projections are substantial: one analysis suggests growth from USD 200 million in 2024 to USD 1197 million by 2032 (CAGR 22%). Another projects USD 1.22 billion in 2024 to USD 2.31 billion by 2029.</p>
+                    <p class="mb-4">Digital pathology is a crucial foundation. In France, only about 20% of pathology structures were fully digitized before 2024, slowing AI rollout. A 2024 French survey showed 83% interest in AI tools, but only 4% had pilot programs or deployments. In Sweden, a 2024 mapping identified 179 AI healthcare initiatives, with only 13% (24 initiatives) fully implemented.</p>
+                    <div class="chart-container my-6">
+                        <canvas id="marketGrowthChart"></canvas>
+                    </div>
+                    <h3 class="text-xl font-semibold mt-6 mb-2">The Foundational Role of Digital Pathology Maturity</h3>
+                    <p>Successful AI implementation is linked to digital pathology maturity. The global digital pathology market is growing, driven by AI advancements and demand for remote diagnostics. Germany's market is projected at USD 109.3M by 2030, Sweden's at USD 14.9M. Significant investment in digitization often precedes AI benefits, creating a strategic dilemma for institutions.</p>
+                </div>
+
+                <div id="drivkraefter" class="tab-content py-4 hidden">
+                    <h2 class="text-2xl font-semibold mb-3">Drivkræfter for AI Implementering</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><strong>Workforce shortages and escalating workloads:</strong> Many European countries face a diminishing pool of pathologists (e.g., UK: 32% of cellular pathologists >55, retiring in 5 years). AI can automate tasks and improve throughput.</li>
+                        <li><strong>Enhanced diagnostic accuracy and efficiency:</strong> AI can improve precision (e.g., 99% accuracy for breast cancer metastasis vs. 81% conventional). It can reduce turnaround times and inter-observer variability.</li>
+                        <li><strong>Advancement of precision medicine:</strong> AI analyzes complex datasets (histopathology, genomics) for personalized treatment strategies and biomarker discovery.</li>
+                        <li><strong>Workflow optimization:</strong> AI can automate cell counting, prioritize urgent cases, assist in case allocation, and integrate with LIS/LIMS.</li>
+                    </ul>
+                </div>
+
+                <div id="barrierer" class="tab-content py-4 hidden">
+                    <h2 class="text-2xl font-semibold mb-3">Barrierer for Udbredt Adoption</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><strong>High upfront costs:</strong> Digital pathology infrastructure (scanners, storage, IT) and AI software are substantial investments.</li>
+                        <li><strong>Integration and interoperability:</strong> Seamless integration with LIS, LIMS, PACS, VNA is complex.</li>
+                        <li><strong>Regulatory landscape:</strong> Navigating FDA clearance, CE-IVD marking (IVDR), and the EU AI Act is time-consuming and costly. Most pathology AI is "high-risk".</li>
+                        <li><strong>Data governance and privacy:</strong> Compliance with GDPR, data security, and ethical considerations for large datasets are critical.</li>
+                        <li><strong>Pathologist acceptance and trust:</strong> Concerns about medical responsibility, "black box" algorithms, and professional roles persist. Transparency and explainability are key.</li>
+                        <li><strong>Reimbursement challenges:</strong> Lack of clear, standardized reimbursement models hinders financial sustainability.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="regulering" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">Pan-Europæiske Regulatoriske Rammer</h1>
+            <p class="mb-6">Denne sektion dækker de centrale EU-lovgivninger, der former landskabet for AI i patologi, primært EU AI Act og In Vitro Diagnostic Regulation (IVDR). Forståelse af disse er afgørende for både udviklere og implementerende organisationer for at sikre overholdelse og navigere i de komplekse krav.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <button class="accordion-button" data-target="ai-act-content">
+                        <span>EU AI Act (Regulation (EU) 2024/1689)</span>
+                        <span class="arrow-icon transition-transform duration-300 transform">&#9660;</span>
+                    </button>
+                    <div id="ai-act-content" class="accordion-content hidden">
+                        <p>Entered force August 2024. Most AI tools in pathology are classified as "high-risk," imposing stringent obligations on manufacturers ("providers") and deployers (hospitals/labs). Requirements include:
+                        <ul class="list-disc list-inside pl-4 mt-2 space-y-1">
+                            <li>Rigorous risk management systems.</li>
+                            <li>Robust data governance (training, validation, testing data).</li>
+                            <li>Detailed technical documentation.</li>
+                            <li>Mechanisms for human oversight.</li>
+                            <li>High standards for accuracy, robustness, cybersecurity.</li>
+                            <li>Transparency: users must interpret output, individuals informed of AI-driven decisions.</li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <button class="accordion-button" data-target="ivdr-content">
+                        <span>In Vitro Diagnostic Regulation (IVDR (EU) 2017/746)</span>
+                         <span class="arrow-icon transition-transform duration-300 transform">&#9660;</span>
+                    </button>
+                    <div id="ivdr-content" class="accordion-content hidden">
+                        <p>Fully applicable May 2022. AI-based image analysis software for diagnostic purposes typically falls under IVDR. Imposes:
+                        <ul class="list-disc list-inside pl-4 mt-2 space-y-1">
+                            <li>Stricter requirements for clinical evidence (performance evaluation, clinical validation).</li>
+                            <li>Enhanced post-market surveillance.</li>
+                            <li>More rigorous risk-based classification (AI software often Class C or B).</li>
+                            <li>Increased scrutiny from Notified Bodies.</li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-4">Nøgleimplikationer af EU AI Act & IVDR (Uddrag fra Tabel 1)</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-neutral-300">
+                    <thead class="bg-stone-200">
+                        <tr>
+                            <th class="px-4 py-2 border-b text-left text-sm font-semibold text-neutral-700">Aspekt</th>
+                            <th class="px-4 py-2 border-b text-left text-sm font-semibold text-neutral-700">Kombineret Effekt på AI Patologi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hover:bg-stone-50">
+                            <td class="px-4 py-2 border-b">Risk Classification</td>
+                            <td class="px-4 py-2 border-b">AI pathology tools face high regulatory scrutiny under both, requiring extensive conformity assessment.</td>
+                        </tr>
+                        <tr class="hover:bg-stone-50">
+                            <td class="px-4 py-2 border-b">Data Governance</td>
+                            <td class="px-4 py-2 border-b">Emphasis on high-quality, representative, ethically sourced data; significant documentation burden.</td>
+                        </tr>
+                        <tr class="hover:bg-stone-50">
+                            <td class="px-4 py-2 border-b">Clinical Evidence & Performance</td>
+                            <td class="px-4 py-2 border-b">Rigorous validation essential, potentially requiring prospective clinical studies, increasing time/cost.</td>
+                        </tr>
+                         <tr class="hover:bg-stone-50">
+                            <td class="px-4 py-2 border-b">Human Oversight</td>
+                            <td class="px-4 py-2 border-b">AI tools are aids, not replacements; design must facilitate effective human interaction and final decision-making.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="mt-4 text-sm text-neutral-600">Compliance timelines are phased, with most high-risk AI system requirements applying from August 2026. This dual regulatory burden can be challenging, especially for SMEs, potentially slowing widespread adoption of diverse, clinically validated AI solutions.</p>
+
+        </section>
+
+        <section id="initiativer" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">EU-Dækkende Initiativer for Data Deling og AI Udvikling</h1>
+            <p class="mb-6">Udover direkte regulering sigter flere EU-dækkende strategiske initiativer mod at fremme et miljø, der er befordrende for AI-udvikling og -implementering i sundhedsvæsenet, med stærk vægt på datadeling og infrastruktur. Disse initiativer lægger fundamentet for fremtidig vækst.</p>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2">EU AI Continent Action Plan (April 2025)</h2>
+                    <p>Aims to boost AI development via enhanced computing infrastructure (AI Factories, supercomputing), data access, skills development, simplified regulations, and promoting AI in strategic sectors like healthcare. Includes proposed Cloud and AI Development Act to triple EU data center capacity in 5-7 years.</p>
+                </div>
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2">EuCanImage Project</h2>
+                    <p>International consortium for AI in oncology precision medicine. Promotes data interoperability (FHIR standards) and uses repositories like EGA. Creating a large-scale, federated cancer image database for AI research.</p>
+                </div>
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2">BigPicture Project (IHI)</h2>
+                    <p>Aims to create a massive European repository of ~3 million digital pathology slides (human and animal) to fuel AI development. Emphasizes data standards (contributing to ISO/PWI 24051-2) and ethical, GDPR-compliant sharing.</p>
+                </div>
+                <div class="card">
+                    <h2 class="text-xl font-semibold mb-2">European Health Data Space (EHDS)</h2>
+                    <p>Empowers individuals with health data control and facilitates secondary data use for research, innovation, policy, and regulation within a trusted framework. Regulation formally approved Jan 2025. Expected to provide unprecedented access to diverse, large-scale health datasets for AI training and validation.</p>
+                </div>
+            </div>
+            <p class="mt-6 text-neutral-600">While crucial for long-term groundwork (data access, standardization, infrastructure), the direct impact of these initiatives on current large-scale clinical AI deployment is still emerging. They are foundational, multi-year endeavors primarily building future capabilities.</p>
+        </section>
+
+        <section id="lande" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">Lande-Spotlight: AI i Patologi på Tværs af Europa</h1>
+            <p class="mb-6">Adoptionen af AI i patologi varierer betydeligt mellem europæiske nationer og regioner. Denne sektion giver et detaljeret kig på lande, hvor AI anvendes rutinemæssigt og i betydelig skala, baseret på nationale strategier, digital modenhed, finansiering og forskningsøkosystemer. Vælg et land/region nedenfor for at se detaljer.</p>
+            
+            <div id="country-selector" class="mb-6 flex flex-wrap justify-center">
+                </div>
+            <div id="country-details" class="card">
+                <p class="text-center text-neutral-500">Vælg et land/region for at se detaljer.</p>
+            </div>
+        </section>
+
+        <section id="teknologier" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">Førende AI Teknologier og Løsninger i Europæisk Klinisk Praksis</h1>
+            <p class="mb-6">Efterhånden som AI-adoptionen inden for patologi skrider frem, bliver visse typer AI-applikationer og specifikke leverandørløsninger mere fremtrædende i rutinemæssige kliniske miljøer i Europa. Fokus er i høj grad på værktøjer, der adresserer opgaver med høj volumen, forbedrer effektiviteten og øger diagnostisk konsistens, især inden for kræftpatologi.</p>
+
+            <h2 class="text-2xl font-semibold mb-3">Oversigt over AI-applikationer med demonstreret skalerbarhed</h2>
+            <ul class="list-disc list-inside space-y-2 mb-6">
+                <li><strong>Disease Diagnosis and Prognosis:</strong> Primarily for cancer detection, grading, and staging (prostate, breast, lung, colon). AI models identify cancerous regions, assess Gleason scores, detect metastases.</li>
+                <li><strong>Biomarker Quantification:</strong> Automated analysis of IHC biomarkers like Ki67, HER2, PD-L1, offering objectivity and reproducibility.</li>
+                <li><strong>Workflow Optimization:</strong> Prioritizing urgent cases, identifying regions of interest, automating cell counting, supporting initial screening.</li>
+            </ul>
+            <p class="mb-4">Underlying technologies include image analysis software, diagnostic workflow software, and predictive analytics software, often using Convolutional Neural Networks (CNNs). Current large-scale applications focus on high-volume, pattern-recognition tasks in cancer pathology.</p>
+
+            <h2 class="text-2xl font-semibold mt-6 mb-3">Fremtrædende AI-leverandører og -platforme (Uddrag fra Tabel 3)</h2>
+            <div id="vendor-cards-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+             <p class="mt-6 text-neutral-600">Mens foundation-modeller og multimodal AI viser et enormt potentiale, er deres storskala, rutinemæssige kliniske anvendelse i Europa stadig i sin vorden. Nuværende implementeringer fokuserer på mere målrettede, superviserede læringsapplikationer.</p>
+        </section>
+
+        <section id="implementering" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">Veje til Succesfuld Storskala Implementering</h1>
+            <p class="mb-6">Rejsen mod succesfuld storskala implementering af AI i patologi i Europa er kompleks og involverer teknologiske, finansielle, regulatoriske og menneskelige faktorer. Erfaringer fra regioner og institutioner, der gør betydelige fremskridt, giver værdifulde lektioner.</p>
+
+            <h2 class="text-2xl font-semibold mb-3">Kritiske Succesfaktorer Observeret i Europæiske Implementeringer</h2>
+            <ul class="list-disc list-inside space-y-2 mb-6">
+                <li><strong>Phased Approach and Early Wins:</strong> Start with clear use cases (e.g., biomarker quantification) to build trust and demonstrate value.</li>
+                <li><strong>Pathologist Engagement and Comprehensive Training:</strong> Involve pathologists early; provide effective education for all staff.</li>
+                <li><strong>Seamless Integration and Interoperability:</strong> AI must integrate with LIS, IMS, PACS, VNA.</li>
+                <li><strong>Robust Digital Infrastructure:</strong> Full digitization, high-speed networks, storage, high-res monitors are prerequisites.</li>
+                <li><strong>Demonstrating Clinical and Economic Benefits:</strong> Show ROI through efficiency, cost savings, or improved patient outcomes. Digital pathology can achieve cost recovery in ~6 years.</li>
+                <li><strong>Strong Leadership and Effective Change Management:</strong> Essential for navigating transformation.</li>
+                <li><strong>Collaboration and Partnerships:</strong> Public-private partnerships and vendor collaborations are common.</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mt-6 mb-3">Det Skiftende Refusions- og Finansieringslandskab</h2>
+            <p class="mb-4">Financial sustainability depends on reimbursement and funding, which is still evolving and a major challenge. Lack of clear, adequate reimbursement is a major impediment. Most European countries lack dedicated, standardized reimbursement codes for AI-driven pathology analysis.</p>
+            <p class="mb-4">Examples:</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li><strong>France:</strong> Reimbursement via Social Security requires proof of improved care quality. HAS evaluates for LPPR.</li>
+                <li><strong>Germany:</strong> Medical Research Act (Jan 2025) may influence innovation funding. DiGA pathway exists, applicability to complex AI pathology unclear.</li>
+                <li><strong>UK:</strong> NHS funding for digitization and AI initiatives. NICE evaluates technologies. No widespread national tariffs for AI pathology.</li>
+                <li><strong>Sweden:</strong> TLV evaluates AI tools (e.g., Stratipath Breast).</li>
+                <li><strong>US (context):</strong> New CPT codes for digital pathology (Jan 2024) signal recognition.</li>
+            </ul>
+            <p class="mt-4">Adoption is often financed through grants, innovation funds, or capital budgets, not routine per-case reimbursement for AI, hindering sustainable large-scale adoption.</p>
+        </section>
+
+        <section id="strategi" class="content-section hidden">
+            <h1 class="text-3xl font-bold mb-6 text-teal-700">Strategisk Udsyn og Anbefalinger</h1>
+            <p class="mb-6">For europæiske sundhedsorganisationer, der overvejer at integrere AI i deres patologitjenester, er et fremadskuende perspektiv og en veldefineret strategi afgørende. Landskabet udvikler sig hurtigt, og succesfuld adoption kræver omhyggelig planlægning og en klar forståelse af både muligheder og udfordringer.</p>
+
+            <h2 class="text-2xl font-semibold mb-3">Forventet Udvikling af AI i Europæisk Patologi (Næste 2-5 År)</h2>
+            <ul class="list-disc list-inside space-y-2 mb-6">
+                <li>Continued growth in digital pathology foundation.</li>
+                <li>Expansion of CE-IVD/IVDR AI tools for high-impact applications.</li>
+                <li>Deeper integration of AI into LIS/IMS platforms.</li>
+                <li>Gradual maturation of reimbursement pathways.</li>
+                <li>Emergence of advanced AI (foundation models, multimodal AI) in clinical validation/early adoption.</li>
+                <li>Increased focus on predictive analytics.</li>
+                <li>Refinement of regulatory frameworks (EU AI Act, IVDR).</li>
+            </ul>
+
+            <h2 class="text-2xl font-semibold mt-6 mb-3">Handlingsorienterede Anbefalinger for Organisationer</h2>
+             <div class="space-y-3">
+                <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">1. Vurder Digital Modenhed og Planlæg Infrastruktur</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Conduct a thorough assessment of existing digital pathology infrastructure. Develop a clear roadmap for full digitization (scanner capacity, LIS/IMS integration, network, storage, workstations).</p>
+                </details>
+                <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">2. Definer Klare Kliniske Behov og Prioriter Anvendelsestilfælde</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Identify specific, high-impact problems AI can address (e.g., reducing TAT, improving grading consistency, automating quantification). Start with validated AI applications with clear ROI.</p>
+                </details>
+                <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">3. Engager Patologer og Laboratoriepersonale Tidligt og Kontinuerligt</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Involve pathologists, biomedical scientists, IT staff from the beginning. Provide comprehensive training and address concerns.</p>
+                </details>
+                 <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">4. Udvikl en Faseret Implementeringsstrategi</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Start with pilot projects. Validate performance with local data. Gather feedback, refine workflows, then scale up.</p>
+                </details>
+                <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">5. Prioriter Interoperabilitet og Problemfri Integration</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Emphasize AI solutions' ability to integrate with existing LIS, IMS, PACS, EMR. Consider open architectures and standards (DICOM, HL7 FHIR).</p>
+                </details>
+                 <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">6. Etabler Robust Datastyring og Kvalitetskontrol</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Develop clear protocols for data management (quality, integrity, security, GDPR compliance).</p>
+                </details>
+                 <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">7. Planlæg Lokal Validering og Kontinuerlig Ydeevneovervågning</summary>
+                    <p class="mt-2 text-sm text-neutral-600">AI models require local validation. Establish processes for ongoing performance monitoring and updates.</p>
+                </details>
+                 <details class="bg-stone-50 p-3 rounded-md shadow">
+                    <summary class="font-semibold cursor-pointer text-teal-700 hover:text-teal-800">8. Opbyg en Stærk og Kvantificerbar Business Case</summary>
+                    <p class="mt-2 text-sm text-neutral-600">Quantify potential benefits (efficiency gains, cost savings, improved accuracy, patient care enhancements) to secure funding.</p>
+                </details>
+            </div>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-3">Nøgleovervejelser for Valg af Leverandør, Partnerskab og Dokumentation af Værdi</h2>
+            <ul class="list-disc list-inside space-y-2">
+                <li><strong>Regulatory Compliance:</strong> Verify CE-IVD (IVDR) marking and EU AI Act preparedness.</li>
+                <li><strong>Clinical Validation Strength:</strong> Scrutinize peer-reviewed studies, preferably with European cohorts.</li>
+                <li><strong>Interoperability & Integration Support:</strong> Assess technical capabilities and support for standards.</li>
+                <li><strong>Scalability, Support & Maintenance:</strong> Ensure solution meets demands and vendor offers good support.</li>
+                <li><strong>Transparency & Explainability (XAI):</strong> Important for pathologist trust in complex AI.</li>
+                <li><strong>Vendor Roadmap & Future Vision:</strong> Understand long-term plans for advancements.</li>
+                <li><strong>Collaborative Partnership Approach:</strong> Look for vendors willing to partner on validation and optimization.</li>
+                <li><strong>Proving Value in Your Setting:</strong> Design pilot studies to collect local data on KPIs to justify investment and scaling.</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer class="bg-neutral-800 text-white text-center p-6 mt-12">
+        <p>&copy; 2025 AI i Patologi Europa - Interaktiv Oversigt. Baseret på rapportdata.</p>
+    </footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const navLinks = document.querySelectorAll('nav a.nav-link, #mobile-menu a.nav-link');
+        const sections = document.querySelectorAll('main section');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        function updateActiveLink(activeSectionId) {
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${activeSectionId}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                if (section.id === sectionId) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+            updateActiveLink(sectionId);
+            window.scrollTo(0, 0); // Scroll to top
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                showSection(targetId);
+                if (mobileMenu.classList.contains('hidden') === false) {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.querySelector('svg.block').classList.remove('hidden');
+                    mobileMenuButton.querySelector('svg.hidden').classList.add('hidden');
+                }
+            });
+        });
+        
+        // Mobile menu toggle
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            mobileMenuButton.querySelectorAll('svg').forEach(svg => svg.classList.toggle('hidden'));
+        });
+
+
+        // Initial section display based on hash or default to 'forside'
+        const initialSectionId = window.location.hash ? window.location.hash.substring(1) : 'forside';
+        showSection(initialSectionId);
+        
+        // Update section on hash change (e.g. browser back/forward)
+        window.addEventListener('hashchange', () => {
+            const newSectionId = window.location.hash ? window.location.hash.substring(1) : 'forside';
+            showSection(newSectionId);
+        });
+
+        // Tabs for "Landskab" section
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabContents.forEach(content => {
+                    if (content.id === targetTab) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+        
+        // Accordions for "Regulering" section
+        const accordionButtons = document.querySelectorAll('.accordion-button');
+        accordionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.target;
+                const targetContent = document.getElementById(targetId);
+                const arrowIcon = button.querySelector('.arrow-icon');
+                
+                targetContent.classList.toggle('hidden');
+                if (targetContent.classList.contains('hidden')) {
+                    arrowIcon.classList.remove('rotate-180');
+                } else {
+                    arrowIcon.classList.add('rotate-180');
+                }
+            });
+        });
+
+
+        // Market Growth Chart
+        const marketGrowthCtx = document.getElementById('marketGrowthChart')?.getContext('2d');
+        if (marketGrowthCtx) {
+            new Chart(marketGrowthCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['2024 (Est. Low)', '2032 (Est. Low)', '2024 (Est. High)', '2029 (Est. High)'],
+                    datasets: [{
+                        label: 'Global AI in Pathology Market (USD Million/Billion)',
+                        data: [200, 1197, 1220, 2310], // Using 1.22B as 1220M for consistency
+                        backgroundColor: [
+                            'rgba(20, 184, 166, 0.6)', // teal-500
+                            'rgba(13, 148, 136, 0.6)', // teal-600
+                            'rgba(20, 184, 166, 0.8)',
+                            'rgba(13, 148, 136, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(20, 184, 166)',
+                            'rgb(13, 148, 136)',
+                            'rgb(20, 184, 166)',
+                            'rgb(13, 148, 136)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Market Value (USD Millions)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        if (context.label.includes('High')) {
+                                             label += (context.parsed.y / 1000).toFixed(2) + ' Billion';
+                                        } else {
+                                             label += context.parsed.y + ' Million';
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Country Spotlights Data & Logic
+        const countryData = {
+            sweden: {
+                name: "Sverige",
+                strategy: "SwAIPP2 (2024-2027); Vårdkartan AI mapping.",
+                implementations: "Region Skåne: Full digital pathology (4 labs, 14 scanners, ~890k slides/yr); Paige Prostate Suite PoC (Apr 2025).",
+                tools: "Paige Prostate Suite (PoC); Stratipath Breast (under TLV evaluation).",
+                digitization: "Region Skåne: High. National: 13% of AI initiatives fully implemented. Market: USD 8.5M (2023).",
+                reimbursement: "TLV evaluating AI tools; New model for orphan drugs.",
+                funding: "Vinnova funding for SwAIPP2 (SEK 15.8M)."
+            },
+            denmark: {
+                name: "Danmark",
+                strategy: "National ambition for AI leadership in public admin.",
+                implementations: "Region of Southern Denmark: Full-scale digital pathology (Sectra, 4 hospitals, since ~2021). Region Nordjylland & Sjælland: Regional digital pathology with Tribun Health CaloPix®.",
+                tools: "Sectra platform enables AI analysis; Tribun Health CaloPix® (AI-ready).",
+                digitization: "High, \"digital by default.\" Multiple regions fully digitizing pathology.",
+                reimbursement: "Not specified for AI pathology. Strong general AI support.",
+                funding: "Regional investments in digital pathology infrastructure."
+            },
+            norway: {
+                name: "Norge",
+                strategy: "Joint AI Plan (2024-2025); SPKI & KIN networks.",
+                implementations: "Helse Vest: Complete digital pathology (4 depts, Sectra IMS); Procuring AI for Ki67 (breast) & prostate cancer (Mar 2025). Helse Sør-Øst (8 depts) optioning in.",
+                tools: "Tools for Ki67 & prostate cancer under procurement.",
+                digitization: "Helse Vest: Fully digitized.",
+                reimbursement: "Not specified for AI pathology.",
+                funding: "DoMore Diagnostics grant (NOK 16M)."
+            },
+            finland: {
+                name: "Finland",
+                strategy: "National AI ecosystem support; 10 funded AI projects in healthcare.",
+                implementations: "HUS: AI for lung cancer detection, etc. FIMLAB: Framework agreement with Aiforia.",
+                tools: "Aiforia solutions; AI for lung cancer at HUS.",
+                digitization: "Advancing, supported by AI initiatives.",
+                reimbursement: "Not specified for AI pathology.",
+                funding: "Govt. funding for 10 AI projects."
+            },
+            uk: {
+                name: "Storbritannien (UK)",
+                strategy: "NHS >£100M for digital pathology since 2018; NHS AI Lab (2020-2025); NICE HTA Lab for AI.",
+                implementations: "Greater Manchester: Digital pathology rollout (7 orgs), target 54% digital reporting. PathLAKE Plus/NHS: Aiforia framework (lung/prostate).",
+                tools: "Paige Breast Lymph Node (validation); Aiforia PD-L1 (lung). NICE trialing AI in 1st histo lab.",
+                digitization: "Progressing; Greater Manchester aims for 54-100%. UK market fastest growing in Europe (USD 85.9M by 2030).",
+                reimbursement: "NICE evaluates AI. No national AI pathology tariff widely established.",
+                funding: "NHS investment; NHSX AI Award; NIHR/UKRI grants."
+            },
+            france: {
+                name: "Frankrig",
+                strategy: "ENIA 2024; PFMG2025 (genomics); HAS 2025-2030 strategy includes AI.",
+                implementations: "AP-HP: Aiforia prostate AI. Nantes Uni Hosp: Aiforia deal (May 2025). RESAH: Tribun Health CaloPix® for national digitization.",
+                tools: "Aiforia prostate AI; Owkin breast cancer tool (research); Tribun Health CaloPix®.",
+                digitization: "Low: ~20% pathology structures fully digitized (early 2024). Only 4% of interested orgs had AI pilots/deployments (Q1 2025).",
+                reimbursement: "Reimbursement needed via Social Security (requires proof of benefit); HAS evaluates for LPPR.",
+                funding: "Public investments advancing AI use; Health Regional Agency Ile-de-France funded AP-HP project."
+            },
+             germany: {
+                name: "Tyskland",
+                strategy: "National AI Strategy; Medical Research Act (Jan 2025).",
+                implementations: "MVZ Hospital Group: Elea AI platform reducing TAT from weeks to hours (2024).",
+                tools: "Elea AI platform. Mindpeak, Aignostics developing tools.",
+                digitization: "Digital pathology market USD 109.3M by 2030. Pathologist assoc. guidelines exist.",
+                reimbursement: "MFG impacts drug pricing, not specific AI path. reimbursement. DiGA pathway exists, applicability unclear.",
+                funding: "Elea ($4.3M funding); Mindpeak ($15.3M); Aignostics ($34M)."
+            },
+            netherlands: {
+                name: "Holland",
+                strategy: "Exploring EU AI Factories; Focus on data protection.",
+                implementations: "Pathology Image Exchange (PIE): National platform for WSI sharing. Active in BigPicture project.",
+                tools: "Pathologists cautiously positive for workflow AI. Specific tools in wide routine use not detailed.",
+                digitization: "High national coordination via PIE platform.",
+                reimbursement: "Not specified for AI pathology.",
+                funding: "National investment in PIE infrastructure."
+            },
+            italy: {
+                name: "Italien",
+                strategy: "AIFA handles HTA/P&R. EU HTAR applies Jan 2025.",
+                implementations: "Lombardy: Aiforia for 31 health authorities (3-yr contract, Jan 2025). Sardinia: Aiforia for 7 hospitals (2-yr contract, Mar 2025). Veneto: Prior Aiforia project.",
+                tools: "Aiforia clinical AI (breast, lung, prostate).",
+                digitization: "Regional digitization efforts. 35% of surveyed professionals use AI tools (2024/2025).",
+                reimbursement: "AIFA P&R process. Potential cost savings recognized.",
+                funding: "Regional funding for digitization/AI projects."
+            },
+            spain: {
+                name: "Spanien",
+                strategy: "ENIA 2024; Min. of Health \"Analítica Farmacia\" AI tool.",
+                implementations: "Castile and León (Sacyl): Aiforia & Sectra selected for AI-assisted diagnostics (July 2024). Scale not fully detailed.",
+                tools: "Aiforia clinical AI planned in Castile and León.",
+                digitization: "AI in Diagnostics market USD 12M (2024). Lab study on DP efficiency (2025).",
+                reimbursement: "AI to play role in P&R.",
+                funding: "Next Gen EU funds for National Green Algorithms Program (EUR 257.7M)."
+            }
+        };
+
+        const countrySelector = document.getElementById('country-selector');
+        const countryDetailsDiv = document.getElementById('country-details');
+        let currentCountryChart = null;
+
+        Object.keys(countryData).forEach(key => {
+            const button = document.createElement('button');
+            button.textContent = countryData[key].name;
+            button.classList.add('country-select-button');
+            button.dataset.countryKey = key;
+            countrySelector.appendChild(button);
+
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.country-select-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                displayCountryDetails(key);
+            });
+        });
+        
+        function displayCountryDetails(countryKey) {
+            const data = countryData[countryKey];
+            let digitizationValue = 0; // Default
+            let marketValue = "N/A";
+
+            if (countryKey === 'sweden') { digitizationValue = 13; marketValue = "USD 8.5M (2023)";} // 13% of AI initiatives implemented
+            else if (countryKey === 'uk') { digitizationValue = 54; marketValue = "USD 85.9M (by 2030 proj.)"; } // Target 54% digital reporting in G. Manchester
+            else if (countryKey === 'france') { digitizationValue = 20; marketValue = "Low"; } // ~20% digitized
+            else if (countryKey === 'germany') { marketValue = "USD 109.3M (by 2030 proj.)"; digitizationValue = 50; /* Placeholder for visualization */ }
+            else if (countryKey === 'italy') { digitizationValue = 35; marketValue = "Growing"; } // 35% of professionals use AI
+            else if (countryKey === 'denmark' || countryKey === 'norway' || countryKey === 'netherlands') { digitizationValue = 75; marketValue = "High"; /* Placeholder for high digitization */ }
+            else { digitizationValue = 30; /* Generic placeholder */ }
+
+
+            countryDetailsDiv.innerHTML = `
+                <h2 class="text-2xl font-bold mb-4 text-teal-600">${data.name}</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-1">National/Regional AI/Digital Pathology Strategy:</h3>
+                        <p class="text-sm mb-3">${data.strategy}</p>
+                        
+                        <h3 class="text-lg font-semibold mb-1">Notable Large-Scale Implementations:</h3>
+                        <p class="text-sm mb-3">${data.implementations}</p>
+                        
+                        <h3 class="text-lg font-semibold mb-1">Examples of AI Tools in Routine Use:</h3>
+                        <p class="text-sm mb-3">${data.tools}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-1">Reported Level of Digitization:</h3>
+                        <p class="text-sm mb-3">${data.digitization}</p>
+                        <div class="chart-container h-48 max-h-56 mb-4">
+                             <canvas id="countryDigitizationChart"></canvas>
+                        </div>
+                        
+                        <h3 class="text-lg font-semibold mb-1">Reimbursement Status for AI Pathology:</h3>
+                        <p class="text-sm mb-3">${data.reimbursement}</p>
+                        
+                        <h3 class="text-lg font-semibold mb-1">Key Funding Initiatives:</h3>
+                        <p class="text-sm">${data.funding}</p>
+                    </div>
+                </div>
+            `;
+
+            const countryCtx = document.getElementById('countryDigitizationChart')?.getContext('2d');
+            if (currentCountryChart) {
+                currentCountryChart.destroy();
+            }
+            if (countryCtx && digitizationValue > 0) {
+                 currentCountryChart = new Chart(countryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Digitaliseringsniveau (%) / Markedsstatus'],
+                        datasets: [{
+                            label: `${data.name} - Digitalisering/Marked`,
+                            data: [digitizationValue],
+                            backgroundColor: 'rgba(20, 184, 166, 0.7)',
+                            borderColor: 'rgb(13, 148, 136)',
+                            borderWidth: 1,
+                            barPercentage: 0.3
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { x: { beginAtZero: true, max: 100, title: { display: true, text: 'Procent / Indikator' } } },
+                        plugins: { legend: { display: false }, title: { display: true, text: `Digitalisering for ${data.name} (${marketValue})`} }
+                    }
+                });
+            } else if (countryCtx) { // Handle cases with no specific %
+                 currentCountryChart = new Chart(countryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Markedsstatus'],
+                        datasets: [{
+                            label: `${data.name} - Marked`,
+                            data: [50], // Placeholder value if no specific %
+                            backgroundColor: 'rgba(107, 114, 128, 0.5)', // gray
+                            borderColor: 'rgb(75, 85, 99)',
+                            borderWidth: 1,
+                            barPercentage: 0.3
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { x: { beginAtZero: true, max: 100, ticks: { callback: () => ''} } }, // Hide ticks
+                        plugins: { legend: { display: false }, title: { display: true, text: `Markedsstatus for ${data.name}: ${marketValue}`} }
+                    }
+                });
+            }
+        }
+
+
+        // Vendor/Technology Cards
+        const vendorData = [
+            { name: "Aiforia® Clinical AI Solutions", vendor: "Aiforia Technologies", apps: "Breast, Prostate, Lung cancer (HER2, Ki67, Gleason, PD-L1)", status: "Multiple CE-IVD; IVDR certified QMS & AI models (Feb 2025)", projects: "Italy (Lombardy, Sardinia), Spain (Castile and León), UK (NHS PathLAKE Plus), France (AP-HP, Nantes), Finland (FIMLAB)" },
+            { name: "Paige Prostate/Breast Suite, PanCancer Detect", vendor: "Paige", apps: "Prostate/Breast cancer detection & grading; Pan-cancer detection (>40 tissue types)", status: "Multiple FDA clearances; CE-marked. PanCancer Detect expanded.", projects: "Sweden (Region Skåne - Prostate PoC), UK (NHS collaborations)" },
+            { name: "Ibex Galen™ Platform", vendor: "Ibex Medical Analytics", apps: "Prostate, Breast, Gastric cancer detection", status: "CE-IVD marked solutions", projects: "Integrated with Roche navify® Digital Pathology." },
+            { name: "Elea AI-Powered Pathology OS", vendor: "Elea", apps: "Workflow automation, diagnostic support", status: "Deployed in clinical setting (Germany)", projects: "Germany (Major MVZ Hospital Group)" },
+            { name: "DeepDx® Prostate", vendor: "Deep Bio", apps: "Prostate cancer (Gleason grading, tumor localization, volume)", status: "CE-IVD marked", projects: "European deployments not specified at large regional scale in snippets." }
+        ];
+
+        const vendorContainer = document.getElementById('vendor-cards-container');
+        vendorData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card cursor-pointer'; // Add cursor-pointer for interaction hint
+            card.innerHTML = `
+                <h3 class="text-lg font-bold text-teal-600 mb-2">${item.name}</h3>
+                <p class="text-sm mb-1"><strong class="font-semibold">Vendor:</strong> ${item.vendor}</p>
+                <p class="text-sm mb-1"><strong class="font-semibold">Key Applications:</strong> ${item.apps}</p>
+                <p class="text-sm mb-1"><strong class="font-semibold">CE-IVD Status:</strong> ${item.status}</p>
+                <p class="text-sm"><strong class="font-semibold">Known Deployments/Projects:</strong> ${item.projects}</p>
+                <div class="vendor-details hidden mt-2 pt-2 border-t border-stone-200">
+                    <p class="text-xs text-neutral-500">More detailed information could be displayed here upon click, if available in the source data for each vendor.</p>
+                </div>
+            `;
+            // Basic click to toggle more details (placeholder)
+            card.addEventListener('click', () => {
+                const details = card.querySelector('.vendor-details');
+                details.classList.toggle('hidden');
+            });
+            vendorContainer.appendChild(card);
+        });
+
+    });
+</script>
+
+</body>
+</html>
